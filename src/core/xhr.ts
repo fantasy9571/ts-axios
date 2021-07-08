@@ -4,7 +4,7 @@ import { createError } from '../helpers/error'
 import { isUrlSameOrigin } from '../helpers/url'
 import cookie from '../helpers/cookie'
 export default function xhr(config: AxiosRequestConfig): AxiosPromise {
-  return new Promise((reslove, reject) => {
+  return new Promise((resolve, reject) => {
     const {
       url,
       data = null,
@@ -28,6 +28,12 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
     if (withCredentials) {
       request.withCredentials = true
     }
+    if (cancelToken) {
+      cancelToken.promise.then(reason => {
+        request.abort()
+        reject(reason)
+      })
+    }
     if ((withCredentials || isUrlSameOrigin(url!)) && xsrfCookieName) {
       const xsrfValue = cookie.read(xsrfCookieName)
       if (xsrfValue) {
@@ -36,7 +42,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
     }
     request.open(method.toUpperCase(), url!, true)
 
-    request.onreadystatechange = function hanleLoad() {
+    request.onreadystatechange = function handleLoad() {
       if (request.readyState != 4) {
         return
       }
@@ -57,7 +63,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
       }
       handleResponse(response)
     }
-    request.onerror = function hanleError() {
+    request.onerror = function handleError() {
       reject(createError('Network Error', config, null, request))
     }
     request.ontimeout = function handleTimeout() {
@@ -70,16 +76,10 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
         request.setRequestHeader(name, headers[name])
       }
     })
-    if (cancelToken) {
-      cancelToken.promise.then(reason => {
-        request.abort()
-        reject(reason)
-      })
-    }
     request.send(data)
     function handleResponse(response: AxiosResponse) {
       if (request.status >= 200 && response.status < 300) {
-        reslove(response)
+        resolve(response)
       } else {
         reject(
           createError(

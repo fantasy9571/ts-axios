@@ -9,6 +9,7 @@ export default class CancelToken {
   reason?: Cancel
   constructor(executor: CancelExecutor) {
     let resolvePromise: ResolvePromise
+    //传入一个方法，这个方法即是 CancelToken Promise的 resolve控制权
     this.promise = new Promise<Cancel>(resolve => {
       resolvePromise = resolve as any
     })
